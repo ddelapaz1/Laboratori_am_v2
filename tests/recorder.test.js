@@ -25,4 +25,10 @@ test('worklet captures exactly five seconds, averages channels, and emits no mon
   assert.equal(complete[0].samples.length, rate * 5);
   assert.ok(complete[0].samples.every(value => Math.abs(value - .4) < 1e-6));
   assert.ok(messages.some(message => message.type === 'progress' && message.seconds > 4));
+  const count = messages.length;
+  // The browser keeps calling process() while the microphone stays connected,
+  // after the buffer has been transferred to the main thread.
+  structuredClone(recorder.buffer.buffer, { transfer: [recorder.buffer.buffer] });
+  assert.equal(recorder.process(inputs, outputs), false);
+  assert.equal(messages.length, count);
 });
