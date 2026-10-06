@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ca">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prova de captura AM · micròfon sintètic</title>
+<style>body{margin:0;background:#0a1423;color:#e7eef7;font:14px system-ui}p{padding:10px 18px;margin:0;background:#213b53}iframe{display:block;width:100%;height:calc(100vh - 40px);border:0}</style>
+<p>Prova local: micròfon sintètic (700 Hz + 6 kHz), sense accés al micròfon real.</p>
+<iframe src="../index.html" title="Laboratori AM en proves"></iframe>
+<script>
+  document.querySelector('iframe').addEventListener('load', event => {
+    const win = event.target.contentWindow;
+    win.navigator.mediaDevices.getUserMedia = async () => {
+      const context = new win.AudioContext();
+      await context.resume();
+      const destination = context.createMediaStreamDestination();
+      const fundamental = context.createOscillator(), high = context.createOscillator();
+      const lowGain = context.createGain(), highGain = context.createGain();
+      fundamental.frequency.value = 700; high.frequency.value = 6000;
+      lowGain.gain.value = .2; highGain.gain.value = .1;
+      fundamental.connect(lowGain).connect(destination);
+      high.connect(highGain).connect(destination);
+      fundamental.start(); high.start();
+      const track = destination.stream.getTracks()[0], stop = track.stop.bind(track);
+      track.stop = () => { fundamental.stop(); high.stop(); context.close(); stop(); };
+      return destination.stream;
+    };
+  });
+</script>
+</html>
